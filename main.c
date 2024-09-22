@@ -16,6 +16,7 @@ int	main(int argc, char **argv)
 	t_data			data;
 	t_philosopher	*philosophers;
 
+	philosophers = NULL;
 	if (argc != 5 && argc != 6)
 	{
 		printf("Usage: ./philo number_of_philosophers ");
@@ -23,7 +24,7 @@ int	main(int argc, char **argv)
 		printf("[number_of_times_each_philosopher_must_eat]\n");
 		return (1);
 	}
-	if (init_data(&data, argc, argv) || init_philosophers(&data, &philosophers))
+	if (init_data(&data, argc, argv) || init_philosophers(&data, philosophers))
 		return (1);
 	cleanup(&data, philosophers);
 	return (0);

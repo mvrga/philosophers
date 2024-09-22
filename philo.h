@@ -22,7 +22,7 @@ typedef struct s_philosopher
 {
 	int					id;
 	pthread_t			thread;
-	long long			ast_meal_time;
+	long long			last_meal_time;
 	int					meals_eaten;
 	pthread_mutex_t		*left_fork;
 	pthread_mutex_t		*right_fork;
@@ -31,10 +31,11 @@ typedef struct s_philosopher
 
 typedef struct s_data
 {
-	int				num_philophers;
+	int				num_philosophers;
 	int				time_to_die;
+	int				time_to_eat;
 	int				time_to_sleep;
-	int				num_to_meals;
+	int				num_meals;
 	pthread_mutex_t	*forks;
 	pthread_mutex_t	print_mutex;
 	long long		start_time;
@@ -42,11 +43,13 @@ typedef struct s_data
 }t_data;
 
 /* utility and incial functions*/
+int			init_data(t_data *data, int argc, char **argv);
+int			init_philosophers(t_data *data, t_philosopher **philosophers);
+int			init_forks(t_data *data);
 long long	current_time(void);
+void		cleanup(t_data *data, t_philosopher *philosophers);
 void		print_status(t_philosopher *philo, char *status);
 void		*philosopher_routine(void *arg);
-int			init_data(t_data *data, int argc, char **argv);
-int			init_philosophers(t_data *data, t_philosopher *philosophers);
-void		cleanup(t_data *data, t_philosopher *philosophers);
+void		init_philosopher(t_data *data, t_philosopher **philosophers, int i);
 
 #endif

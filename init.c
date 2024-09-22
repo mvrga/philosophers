@@ -13,8 +13,6 @@
 
 int	init_data(t_data *data, int argc, char **argv)
 {
-	int	i;
-
 	data->num_philosophers = atoi(argv[1]);
 	data->time_to_die = atoi(argv[2]);
 	data->time_to_eat = atoi(argv[3]);
