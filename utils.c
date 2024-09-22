@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philo.c                                            :+:      :+:    :+:   */
+/*   utils.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: marcribe <marcribe@student.42.rio>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -11,33 +11,21 @@
 /* ************************************************************************** */
 #include "philo.h"
 
-void	eat(t_philosopher *philo)
+long long	current_time(void)
 {
-	pthread_mutex_lock(philo->left_fork);
-	print_status(philo, "has taken a fork");
-	pthread_mutex_lock(philo->right_fork);
-	print_status(philo, "has taken a fork");
-	philo->last_meal_time = current_time();
-	print_status(philo, "is eating");
-	usleep(philo->data->time_to_eat * 1000);
-	philo->meals_eaten++;
-	pthread_mutex_unlock(philo->right_fork);
-	pthread_mutex_unlock(philo->left_fork);
+	struct timeval	tv;
+	long long		ms;
+
+	gettimeofday(&tv, NULL);
+	ms = (tv.tv_sec * 1000LL) + (tv.tv_usec / 1000LL);
+	return (ms);
 }
 
-void	*philosopher_routine(void *arg)
+void	print_status(t_philosopher *philo, char *status)
 {
-	t_philosopher	*philo;
-
-	philo = (t_philosopher *)arg;
-	if (philo->id % 2 == 0)
-		usleep(1000);
-	while (philo->data->all_alive)
-	{
-		eat(philo);
-		print_status(philo, "is sleeping");
-		usleep(philo->data->time_to_sleep * 1000);
-		print_status(philo, "is thinking");
-	}
-	return (NULL);
+	pthread_mutex_lock(&philo->data->print_mutex);
+	if (philo->data->all_alive)
+		printf("%lld %d %s\n",
+			current_time() - philo->data->start_time, philo->id, status);
+	pthread_mutex_unlock(&philo->data->print_mutex);
 }

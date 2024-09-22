@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philo.c                                            :+:      :+:    :+:   */
+/*   main.c                                            :+:      :+:    :+:    */
 /*                                                    +:+ +:+         +:+     */
 /*   By: marcribe <marcribe@student.42.rio>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -11,33 +11,20 @@
 /* ************************************************************************** */
 #include "philo.h"
 
-void	eat(t_philosopher *philo)
+int	main(int argc, char **argv)
 {
-	pthread_mutex_lock(philo->left_fork);
-	print_status(philo, "has taken a fork");
-	pthread_mutex_lock(philo->right_fork);
-	print_status(philo, "has taken a fork");
-	philo->last_meal_time = current_time();
-	print_status(philo, "is eating");
-	usleep(philo->data->time_to_eat * 1000);
-	philo->meals_eaten++;
-	pthread_mutex_unlock(philo->right_fork);
-	pthread_mutex_unlock(philo->left_fork);
-}
+	t_data			data;
+	t_philosopher	*philosophers;
 
-void	*philosopher_routine(void *arg)
-{
-	t_philosopher	*philo;
-
-	philo = (t_philosopher *)arg;
-	if (philo->id % 2 == 0)
-		usleep(1000);
-	while (philo->data->all_alive)
+	if (argc != 5 && argc != 6)
 	{
-		eat(philo);
-		print_status(philo, "is sleeping");
-		usleep(philo->data->time_to_sleep * 1000);
-		print_status(philo, "is thinking");
+		printf("Usage: ./philo number_of_philosophers ");
+		printf("time_to_die time_to_eat time_to_sleep ");
+		printf("[number_of_times_each_philosopher_must_eat]\n");
+		return (1);
 	}
-	return (NULL);
+	if (init_data(&data, argc, argv) || init_philosophers(&data, &philosophers))
+		return (1);
+	cleanup(&data, philosophers);
+	return (0);
 }
