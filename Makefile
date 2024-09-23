@@ -1,6 +1,6 @@
 NAME = philo
 
-SRCS = main.c utils.c philo.c init.c
+SRCS = main.c utils.c philo.c init.c monitor.c
 
 OBJS = $(SRCS:.c=.o)
 
@@ -10,7 +10,7 @@ CFLAGS = -Wall -Wextra -Werror
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CC) $(CFLAGS) -o $(NAME) $(OBJS)
+	$(CC) $(CFLAGS) -o $(NAME) $(OBJS) -lpthread
 
 clean:
 	rm -f $(OBJS)

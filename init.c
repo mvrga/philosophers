@@ -1,41 +1,47 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   init.c                                            :+:      :+:    :+:    */
+/*   init.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: marcribe <marcribe@student.42.rio>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/21 16:54:53 by marcribe          #+#    #+#             */
-/*   Updated: 2024/06/21 16:55:12 by marcribe         ###   ########.fr       */
+/*   Updated: 2024/09/22 17:50:02 by marcribe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #include "philo.h"
 
-int	init_data(t_data *data, int argc, char **argv)
+int	ft_atoi(const char *str)
 {
-	data->num_philosophers = atoi(argv[1]);
-	data->time_to_die = atoi(argv[2]);
-	data->time_to_eat = atoi(argv[3]);
-	data->time_to_sleep = atoi(argv[4]);
-	data->num_meals = -1;
-	if (argc == 6)
-		data->num_meals = atoi(argv[5]);
-	if (data->num_philosophers < 1 || data->time_to_die < 0
-		|| data->time_to_eat < 0 || data->time_to_sleep < 0
-		|| (data->num_meals < 0 && argc == 6))
-		return (1);
-	data->all_alive = 1;
-	if (init_forks(data))
-		return (1);
-	pthread_mutex_init(&data->print_mutex, NULL);
-	data->start_time = current_time();
-	return (0);
+	int	sign;
+	int	result;
+
+	sign = 1;
+	result = 0;
+	while (*str && (*str == ' ' || *str == '\t' || *str == '\n'
+			|| *str == '\r' || *str == '\v' || *str == '\f'))
+		str++;
+	if (*str == '-' || *str == '+')
+		if (*str++ == '-')
+			sign = -1;
+	while (*str >= '0' && *str <= '9')
+		result = result * 10 + (*str++ - '0');
+	return (result * sign);
 }
 
-int	init_forks(t_data *data)
+int	init_data(t_data *data, int argc, char **argv)
 {
 	int	i;
 
+	data->num_philosophers = ft_atoi(argv[1]);
+	data->time_to_die = ft_atoi(argv[2]);
+	data->time_to_eat = ft_atoi(argv[3]);
+	data->time_to_sleep = ft_atoi(argv[4]);
+	data->start_time = current_time();
+	if (argc == 6)
+		data->num_meals = ft_atoi(argv[5]);
+	else
+		data->num_meals = -1;
 	data->forks = malloc(sizeof(pthread_mutex_t) * data->num_philosophers);
 	if (!data->forks)
 		return (1);
@@ -58,42 +64,69 @@ int	init_philosophers(t_data *data, t_philosopher **philosophers)
 	i = 0;
 	while (i < data->num_philosophers)
 	{
-		init_philosopher(data, philosophers, i);
+		(*philosophers)[i].id = i + 1;
+		(*philosophers)[i].left_fork
+			= &data->forks[i];
+		(*philosophers)[i].right_fork
+			= &data->forks[(i + 1) % data->num_philosophers];
+		(*philosophers)[i].last_meal_time = data->start_time;
+		(*philosophers)[i].meals_eaten = 0;
+		(*philosophers)[i].data = data;
+		pthread_mutex_init(&(*philosophers)[i].mutex, NULL);
 		i++;
 	}
 	return (0);
 }
 
-void	init_philosopher(t_data *data, t_philosopher **philosophers, int i)
+static void	*monitor_philosopher(void *arg)
 {
-	(*philosophers)[i].id = i + 1;
-	(*philosophers)[i].last_meal_time = current_time();
-	(*philosophers)[i].meals_eaten = 0;
-	(*philosophers)[i].left_fork = &data->forks[i];
-	(*philosophers)[i].right_fork = &data->forks[(i + 1)
-		% data->num_philosophers];
-	(*philosophers)[i].data = data;
-	pthread_create(&(*philosophers)[i].thread, NULL, philosopher_routine,
-		&(*philosophers)[i]);
+	t_philosopher	*philo;
+
+	philo = (t_philosopher *)arg;
+	while (1)
+	{
+		pthread_mutex_lock(philo->left_fork);
+		printf("%lld %d has taken a fork\n",
+			current_time() - philo->data->start_time, philo->id);
+		pthread_mutex_lock(philo->right_fork);
+		printf("%lld %d has taken a fork\n",
+			current_time() - philo->data->start_time, philo->id);
+		printf("%lld %d is eating\n",
+			current_time() - philo->data->start_time, philo->id);
+		usleep(philo->data->time_to_eat * 1000);
+		pthread_mutex_unlock(philo->right_fork);
+		pthread_mutex_unlock(philo->left_fork);
+		printf("%lld %d is sleeping\n",
+			current_time() - philo->data->start_time, philo->id);
+		usleep(philo->data->time_to_sleep * 1000);
+		printf("%lld %d is thinking\n",
+			current_time() - philo->data->start_time, philo->id);
+	}
+	return (NULL);
 }
 
-void	cleanup(t_data *data, t_philosopher *philosophers)
+int	start_simulation(t_data *data, t_philosopher *philosophers)
 {
-	int	i;
+	pthread_t	*threads;
+	int			i;
 
+	threads = malloc(sizeof(pthread_t) * data->num_philosophers);
+	if (!threads)
+		return (1);
 	i = 0;
 	while (i < data->num_philosophers)
 	{
-		pthread_join(philosophers[i].thread, NULL);
+		pthread_create(&threads[i], NULL,
+			monitor_philosopher, &philosophers[i]);
+		usleep(100);
 		i++;
 	}
 	i = 0;
 	while (i < data->num_philosophers)
 	{
-		pthread_mutex_destroy(&data->forks[i]);
+		pthread_detach(threads[i]);
 		i++;
 	}
-	pthread_mutex_destroy(&data->print_mutex);
-	free(data->forks);
-	free(philosophers);
+	free(threads);
+	return (0);
 }
