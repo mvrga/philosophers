@@ -36,7 +36,6 @@ void	eat(t_philosopher *philo)
 	pthread_mutex_unlock(philo->left_fork);
 }
 
-// Rotina principal de cada filósofo
 void	*philosopher_routine(void *arg)
 {
 	t_philosopher	*philo;
