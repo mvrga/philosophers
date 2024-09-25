@@ -11,25 +11,19 @@
 /* ************************************************************************** */
 #include "philo.h"
 
-int	print_error(char *message)
-{
-	printf("%s\n", message);
-	return (1);
-}
-
 int	main(int argc, char **argv)
 {
 	t_data			data;
 	t_philosopher	*philosophers;
 
 	if (argc != 5 && argc != 6)
-		return (print_error("Error: Invalid number of arguments"));
-	if (init_data(&data, argc, argv))
-		return (print_error("Error: Initialization failed"));
-	if (init_philosophers(&data, &philosophers))
-		return (print_error("Error: Philosopher initialization failed"));
-	if (start_simulation(&data, philosophers))
-		return (print_error("Error: Simulation failed"));
+		return (1);
+	if (init_data(&data, argc, argv) != 0)
+		return (2);
+	if (init_philosophers(&data, &philosophers) != 0)
+		return (3);
+	if (start_simulation(&data, philosophers) != 0)
+		return (4);
 	free(philosophers);
 	free(data.forks);
 	return (0);

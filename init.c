@@ -11,24 +11,6 @@
 /* ************************************************************************** */
 #include "philo.h"
 
-int	ft_atoi(const char *str)
-{
-	int	sign;
-	int	result;
-
-	sign = 1;
-	result = 0;
-	while (*str && (*str == ' ' || *str == '\t' || *str == '\n'
-			|| *str == '\r' || *str == '\v' || *str == '\f'))
-		str++;
-	if (*str == '-' || *str == '+')
-		if (*str++ == '-')
-			sign = -1;
-	while (*str >= '0' && *str <= '9')
-		result = result * 10 + (*str++ - '0');
-	return (result * sign);
-}
-
 int	init_data(t_data *data, int argc, char **argv)
 {
 	int	i;
@@ -51,6 +33,7 @@ int	init_data(t_data *data, int argc, char **argv)
 		pthread_mutex_init(&data->forks[i], NULL);
 		i++;
 	}
+	pthread_mutex_init(&data->print_lock, NULL); // Inicializa o mutex para impressão
 	return (0);
 }
 
@@ -65,68 +48,42 @@ int	init_philosophers(t_data *data, t_philosopher **philosophers)
 	while (i < data->num_philosophers)
 	{
 		(*philosophers)[i].id = i + 1;
-		(*philosophers)[i].left_fork
-			= &data->forks[i];
-		(*philosophers)[i].right_fork
-			= &data->forks[(i + 1) % data->num_philosophers];
+		(*philosophers)[i].left_fork = &data->forks[i];
+		(*philosophers)[i].right_fork = &data->forks[(i + 1) % data->num_philosophers];
 		(*philosophers)[i].last_meal_time = data->start_time;
 		(*philosophers)[i].meals_eaten = 0;
 		(*philosophers)[i].data = data;
-		pthread_mutex_init(&(*philosophers)[i].mutex, NULL);
 		i++;
 	}
 	return (0);
 }
 
-static void	*monitor_philosopher(void *arg)
-{
-	t_philosopher	*philo;
-
-	philo = (t_philosopher *)arg;
-	while (1)
-	{
-		pthread_mutex_lock(philo->left_fork);
-		printf("%lld %d has taken a fork\n",
-			current_time() - philo->data->start_time, philo->id);
-		pthread_mutex_lock(philo->right_fork);
-		printf("%lld %d has taken a fork\n",
-			current_time() - philo->data->start_time, philo->id);
-		printf("%lld %d is eating\n",
-			current_time() - philo->data->start_time, philo->id);
-		usleep(philo->data->time_to_eat * 1000);
-		pthread_mutex_unlock(philo->right_fork);
-		pthread_mutex_unlock(philo->left_fork);
-		printf("%lld %d is sleeping\n",
-			current_time() - philo->data->start_time, philo->id);
-		usleep(philo->data->time_to_sleep * 1000);
-		printf("%lld %d is thinking\n",
-			current_time() - philo->data->start_time, philo->id);
-	}
-	return (NULL);
-}
-
 int	start_simulation(t_data *data, t_philosopher *philosophers)
 {
 	pthread_t	*threads;
+	pthread_t	*monitors;
 	int			i;
 
 	threads = malloc(sizeof(pthread_t) * data->num_philosophers);
-	if (!threads)
+	monitors = malloc(sizeof(pthread_t) * data->num_philosophers);
+	if (!threads || !monitors)
 		return (1);
 	i = 0;
 	while (i < data->num_philosophers)
 	{
-		pthread_create(&threads[i], NULL,
-			monitor_philosopher, &philosophers[i]);
+		pthread_create(&threads[i], NULL, philosopher_routine, &philosophers[i]);
+		pthread_create(&monitors[i], NULL, monitor_philosopher, &philosophers[i]);
 		usleep(100);
 		i++;
 	}
 	i = 0;
 	while (i < data->num_philosophers)
 	{
-		pthread_detach(threads[i]);
+		pthread_join(threads[i], NULL);
+		pthread_join(monitors[i], NULL);
 		i++;
 	}
 	free(threads);
+	free(monitors);
 	return (0);
 }

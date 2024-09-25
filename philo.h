@@ -12,51 +12,39 @@
 #ifndef PHILO_H
 # define PHILO_H
 
-# include	<pthread.h>
-# include	<stdio.h>
-# include	<stdlib.h>
-# include	<unistd.h>
-# include	<sys/time.h>
+# include <pthread.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <unistd.h>
+# include <sys/time.h>
 
-typedef struct s_philosopher
-{
-	int					id;
-	pthread_t			thread;
-	long long			last_meal_time;
-	int					meals_eaten;
-	pthread_mutex_t		*left_fork;
-	pthread_mutex_t		*right_fork;
-	pthread_mutex_t		mutex;
-	struct s_data		*data;
-}t_philosopher;
-
-typedef struct s_data
-{
+typedef struct s_data {
 	int				num_philosophers;
 	int				time_to_die;
 	int				time_to_eat;
 	int				time_to_sleep;
+	long long		start_time;
 	int				num_meals;
 	pthread_mutex_t	*forks;
-	pthread_mutex_t	print_mutex;
-	long long		start_time;
-	int				all_alive;
-	t_philosopher	*philosophers;
-}t_data;
+	pthread_mutex_t	print_lock;
+} t_data;
 
-/* utility and incial functions*/
-int			init_data(t_data *data, int argc, char **argv);
-int			init_philosophers(t_data *data, t_philosopher **philosophers);
-int			init_forks(t_data *data);
-int			start_simulation(t_data *data, t_philosopher *philosophers);
-int			print_error(char *message);
-int			ft_atoi(const char *str);
+typedef struct s_philosopher {
+	int				id;
+	long long		last_meal_time;
+	int				meals_eaten;
+	pthread_mutex_t	*left_fork;
+	pthread_mutex_t	*right_fork;
+	t_data			*data;
+} t_philosopher;
+
+int		init_data(t_data *data, int argc, char **argv);
+int		init_philosophers(t_data *data, t_philosopher **philosophers);
 long long	current_time(void);
-void		cleanup(t_data *data, t_philosopher *philosophers);
-void		print_status(t_philosopher *philo, char *status);
 void		*philosopher_routine(void *arg);
-void		init_philosopher(t_data *data, t_philosopher **philosophers, int i);
-void		*monitor_philosophers(void *arg);
-long long	time_since_last_meal(t_philosopher *philo);
+void		*monitor_philosopher(void *arg);
+void		print_status(t_philosopher *philo, char *status);
+int		start_simulation(t_data *data, t_philosopher *philosophers);
+int		ft_atoi(const char *str);
 
 #endif
